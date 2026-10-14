@@ -1,0 +1,166 @@
+Building windows\runner\duanju_core.dll
+go: downloading github.com/bogdanfinn/fhttp v0.6.9
+go: downloading github.com/bogdanfinn/tls-client v1.16.0
+go: downloading golang.org/x/net v0.48.0
+go: downloading golang.org/x/sys v0.39.0
+go: downloading golang.org/x/text v0.32.0
+go: downloading github.com/bogdanfinn/utls v1.7.8-barnius
+go: downloading github.com/bdandy/go-socks4 v1.2.3
+go: downloading github.com/bogdanfinn/quic-go-utls v1.0.10-utls
+go: downloading github.com/bogdanfinn/websocket v1.5.6-barnius
+go: downloading github.com/tam7t/hpkp v0.0.0-20160821193359-2b70b4024ed5
+go: downloading github.com/andybalholm/brotli v1.2.0
+go: downloading github.com/klauspost/compress v1.18.2
+go: downloading github.com/bdandy/go-errors v1.2.2
+go: downloading github.com/cloudflare/circl v1.6.2
+go: downloading golang.org/x/crypto v0.46.0
+go: downloading github.com/quic-go/qpack v0.6.0
+Building flutter tool... 
+Running pub upgrade... 
+Resolving dependencies...
+Downloading packages...
+Got dependencies.
+Resolving dependencies...
+Downloading packages...
++ android_file_picker 2.1.0
++ archive 4.5.2
++ args 2.7.0
++ async 2.13.1
++ boolean_selector 2.1.2
+  characters 1.4.1 (from direct dependency to transitive dependency)
++ clock 1.1.3
++ code_assets 1.2.1 (2.1.0 available)
+  collection 1.19.1 (from direct dependency to transitive dependency)
++ cross_file 0.3.5+5 (0.4.0 available)
++ crypto 3.0.7
++ csslib 1.0.2
++ dbus 0.8.0
++ fake_async 1.3.3
++ ffi 2.2.0
++ ffi_leak_tracker 0.1.2
++ ffmpeg_kit_flutter_new_min_gpl 2.6.2 (2.6.7 available)
++ ffmpeg_kit_flutter_platform_interface 0.2.1
++ file 7.0.1
++ file_picker 13.1.0
++ file_picker_darwin 2.3.0
++ file_picker_linux 2.0.2
++ file_picker_platform_interface 4.2.0
++ file_picker_web 4.1.0
++ fixnum 1.1.1
++ flutter 0.0.0 from sdk flutter
++ flutter_driver 0.0.0 from sdk flutter
++ flutter_foreground_task 11.0.3
++ flutter_lints 6.0.0
++ flutter_localizations 0.0.0 from sdk flutter
++ flutter_test 0.0.0 from sdk flutter
++ flutter_web_plugins 0.0.0 from sdk flutter
++ fuchsia_remote_debug_protocol 0.0.0 from sdk flutter
++ hooks 2.0.2 (2.2.0 available)
++ html 0.15.7
++ http 1.6.0
++ http_parser 4.1.2
++ image 4.12.0
++ integration_test 0.0.0 from sdk flutter
+  intl 0.20.3 (from direct dependency to transitive dependency)
++ jni 1.1.0
++ jni_flutter 1.0.4+1
++ jni_util 1.0.0
++ json_annotation 4.12.0
++ leak_tracker 11.0.2
++ leak_tracker_flutter_testing 3.0.10
++ leak_tracker_testing 3.0.2
++ lints 6.1.0
++ logging 1.3.0
++ matcher 0.12.20
+  material_color_utilities 0.13.0 (from direct dependency to transitive dependency) (0.13.1 available)
++ media_kit 1.2.6
++ media_kit_libs_android_video 1.3.8
++ media_kit_libs_ios_video 1.1.4
++ media_kit_libs_linux 1.2.1
++ media_kit_libs_macos_video 1.1.4
++ media_kit_libs_video 1.0.7
+! media_kit_libs_windows_video 1.0.11+duanju.1 from path packages\media_kit_libs_windows_video (overridden)
++ media_kit_video 2.0.1
+  meta 1.18.3 (from direct dependency to transitive dependency) (1.19.0 available)
++ nested 1.0.0
++ nsd 5.0.1
++ nsd_android 2.2.0
++ nsd_ios 3.0.1
++ nsd_macos 3.0.1
++ nsd_platform_interface 2.2.0
++ nsd_windows 3.0.1
++ objective_c 9.5.0 (9.6.2 available)
++ package_config 3.0.0
++ package_info_plus 10.2.2
++ package_info_plus_platform_interface 4.1.0
++ path_provider 2.1.6
++ path_provider_android 2.3.1
++ path_provider_foundation 2.6.0
++ path_provider_linux 2.2.2
++ path_provider_platform_interface 2.1.3
++ path_provider_windows 2.3.0
++ petitparser 7.0.2 (7.1.0 available)
++ platform 3.2.0
++ plugin_platform_interface 2.1.8
++ posix 6.5.2
++ process 5.0.6
++ provider 6.1.5+1
++ pub_semver 2.2.1
++ record_use 0.6.0 (1.1.1 available)
++ safe_local_storage 2.0.6
++ screen_retriever 0.2.2 (0.3.0 available)
++ screen_retriever_linux 0.2.2
++ screen_retriever_macos 0.2.2
++ screen_retriever_platform_interface 0.2.2
++ screen_retriever_windows 0.2.2
++ shared_preferences 2.5.6
++ shared_preferences_android 2.4.28
++ shared_preferences_foundation 2.5.7
++ shared_preferences_linux 2.4.1
++ shared_preferences_platform_interface 2.4.2
++ shared_preferences_web 2.4.3
++ shared_preferences_windows 2.4.1
++ sky_engine 0.0.0 from sdk flutter
++ source_span 1.10.2
++ stack_trace 1.12.2
++ stream_channel 2.1.4
++ string_scanner 1.4.1
++ sync_http 0.3.1
++ synchronized 3.5.0
++ term_glyph 1.2.2
++ test_api 0.7.12 (0.7.15 available)
++ typed_data 1.4.0
++ universal_platform 1.1.0
++ uri_parser 3.0.2
++ uuid 4.6.0
+  vector_math 2.4.0 (from direct dependency to transitive dependency) (2.4.3 available)
++ video_player 2.14.1
++ video_player_android 2.12.2
++ video_player_avfoundation 2.12.1
++ video_player_platform_interface 6.9.0
++ video_player_web 2.4.0
++ vm_service 15.3.0
++ wakelock_plus 1.8.1
++ wakelock_plus_platform_interface 1.7.0
++ web 1.1.1
++ webdriver 3.2.0
++ win32 6.4.0
++ window_manager 0.5.2
++ windows_file_picker 2.0.1
++ xdg_directories 1.1.0
++ xml 7.0.1 (7.1.0 available)
++ yaml 3.1.4
+Would change 127 dependencies.
+13 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Unable to satisfy `pubspec.yaml` using `pubspec.lock`.
+
+To update `pubspec.lock` run `flutter pub get` without
+`--enforce-lockfile`.
+Failed to update packages.
+Traceback (most recent call last):
+  File "D:\a\zhenguojian-win-macos\zhenguojian-win-macos\scripts\build_windows.py", line 27, in <module>
+    subprocess.run([flutter, 'pub', 'get', '--enforce-lockfile'], cwd=root, env=env, check=True)
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['C:\\hostedtoolcache\\windows\\flutter\\stable-3.47.4-x64/flutter/bin\\flutter.BAT', 'pub', 'get', '--enforce-lockfile']' returned non-zero exit status 65.
