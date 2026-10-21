@@ -4,9 +4,21 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
+
+const hongguoBookmallTabPath = "/reading/bookapi/bookmall/tab/v1/"
+
+var hongguoRecommendationFeeds = []struct {
+	key       string
+	tabType   string
+	bottomTab string
+}{
+	{key: "home_feed", tabType: "16", bottomTab: "7"},
+	{key: "find_drama", tabType: "8"},
+}
 
 type hongguoRecommendationQuery struct {
 	Genre     string   `json:"genre"`
@@ -28,6 +40,9 @@ func (query hongguoRecommendationQuery) validate() error {
 	for _, genre := range hongguoAppGenres {
 		known = known || query.Genre == genre.key
 	}
+	for _, feed := range hongguoRecommendationFeeds {
+		known = known || query.Genre == feed.key
+	}
 	if !known || query.Offset < 0 || query.Offset > 1_000_000 || len(query.SessionID) > 4096 || strings.ContainsAny(query.SessionID, "\r\n\x00") || len(query.Seen) > 540 {
 		return errors.New("推荐分类或分页参数无效，请重新获取")
 	}
@@ -43,6 +58,11 @@ func (downloader *Downloader) fetchHongguoRecommendations(ctx context.Context, q
 	page := hongguoRecommendationPage{Dramas: []Drama{}}
 	if err := query.validate(); err != nil {
 		return page, err
+	}
+	for _, feed := range hongguoRecommendationFeeds {
+		if feed.key == query.Genre {
+			return downloader.fetchHongguoFeedRecommendations(ctx, query, feed.tabType, feed.bottomTab)
+		}
 	}
 	scene, category := "", ""
 	for _, genre := range hongguoAppGenres {
@@ -60,7 +80,7 @@ func (downloader *Downloader) fetchHongguoRecommendations(ctx context.Context, q
 		}
 	}
 	payload := map[string]any{
-		"req_scene": scene, "offset": query.Offset, "limit": 18,
+		"req_scene": scene, "offset": query.Offset, "limit": 54,
 		"req_type": "only_content", "need_selector_panel": false, "client_req_type": 3,
 		"session_id": query.SessionID, "filter_ids": strings.Join(filterIDs, ","),
 		"select_items": map[string]any{
@@ -105,6 +125,74 @@ func (downloader *Downloader) fetchHongguoRecommendations(ctx context.Context, q
 	page.NextOffset, page.HasMore, page.SessionID = next, hasMore, mapString(data, "session_id")
 	if !hasMore && (next < query.Offset || next > 1_000_000) {
 		page.NextOffset = query.Offset
+	}
+	if len(page.SessionID) > 4096 || strings.ContainsAny(page.SessionID, "\r\n\x00") {
+		return hongguoRecommendationPage{}, errors.New("红果推荐分页标记无效")
+	}
+	return page, ctx.Err()
+}
+
+func (downloader *Downloader) fetchHongguoFeedRecommendations(ctx context.Context, query hongguoRecommendationQuery, tabType, bottomTab string) (hongguoRecommendationPage, error) {
+	seen := make(map[string]bool, len(query.Seen))
+	for _, id := range query.Seen {
+		seen[strings.TrimPrefix(id, "hongguo:")] = true
+	}
+	page := hongguoRecommendationPage{Dramas: []Drama{}, NextOffset: query.Offset, SessionID: query.SessionID, HasMore: true}
+	validRows := 0
+	for attempt := 0; attempt < 3 && len(page.Dramas) == 0; attempt++ {
+		extra := url.Values{"tab_type": {tabType}, "offset": {strconv.Itoa(page.NextOffset)}, "client_req_type": {"1"}}
+		if bottomTab != "" {
+			extra.Set("bottom_tab_type", bottomTab)
+			extra.Set("landing_bottom_tab_type", bottomTab)
+		}
+		if page.SessionID != "" {
+			extra.Set("session_id", page.SessionID)
+			extra.Set("client_req_type", "2")
+		}
+		result, err := downloader.hongguoAppRequest(ctx, http.MethodGet, hongguoBookmallTabPath, extra, nil)
+		if err != nil {
+			return hongguoRecommendationPage{}, err
+		}
+		var tab map[string]any
+		for _, item := range anyList(nestedMap(result, "data")["tab_item"]) {
+			if row, _ := item.(map[string]any); mapString(row, "tab_type") == tabType {
+				tab = row
+			}
+		}
+		if tab == nil {
+			return hongguoRecommendationPage{}, errors.New("红果推荐数据格式异常，已保留上次位置")
+		}
+		if page.SessionID == "" {
+			page.SessionID = mapString(tab, "session_id")
+		}
+		page.NextOffset++
+		for _, cell := range anyList(tab["cell_data"]) {
+			cellMap, _ := cell.(map[string]any)
+			for _, card := range anyList(cellMap["cell_data"]) {
+				cardMap, _ := card.(map[string]any)
+				for _, video := range anyList(cardMap["video_data"]) {
+					row, _ := video.(map[string]any)
+					if detail, _ := row["video_detail"].(map[string]any); len(detail) > 0 {
+						row = detail
+					}
+					drama := hongguoDramaFromAny(row, "")
+					if drama.ID == "" {
+						continue
+					}
+					validRows++
+					if id := strings.TrimPrefix(drama.ID, "hongguo:"); !seen[id] {
+						seen[id] = true
+						page.Dramas = append(page.Dramas, drama)
+					}
+				}
+			}
+		}
+	}
+	if validRows == 0 {
+		return hongguoRecommendationPage{}, errors.New("红果推荐未返回可识别的剧集")
+	}
+	if len(page.Dramas) == 0 || page.NextOffset > 1_000_000 {
+		return hongguoRecommendationPage{}, errors.New("红果推荐分页未前进，可重试或重新获取")
 	}
 	if len(page.SessionID) > 4096 || strings.ContainsAny(page.SessionID, "\r\n\x00") {
 		return hongguoRecommendationPage{}, errors.New("红果推荐分页标记无效")
