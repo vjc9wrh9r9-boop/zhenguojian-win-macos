@@ -651,7 +651,22 @@ func (engine *nativeEngine) nativeCatalog(ctx context.Context, input nativeInput
 		if page > 1 {
 			ctx = context.WithValue(ctx, libraryMoreKey{}, true)
 		}
-		items, err = d.fetchHongguoAppCatalogCategory(ctx, category)
+		client := d.hongguoClient()
+		client.mu.Lock()
+		blocked := time.Now().Before(client.categoryBlockedUntil)
+		client.mu.Unlock()
+		if blocked {
+			// 分类接口熔断期内直接跳过，交给网页源回退
+			items = nil
+			err = fmt.Errorf("红果 App 分类接口暂不可用")
+		} else {
+			items, err = d.fetchHongguoAppCatalogCategory(ctx, category)
+			if err != nil {
+				client.mu.Lock()
+				client.categoryBlockedUntil = time.Now().Add(5 * time.Minute)
+				client.mu.Unlock()
+			}
+		}
 		state := d.hongguoCatalogSnapshot()
 		result.hongguo = state
 		result.HasMore = hongguoCatalogHasMore(state)
@@ -659,9 +674,29 @@ func (engine *nativeEngine) nativeCatalog(ctx context.Context, input nativeInput
 			result.HasMore = !state.Feeds["category:"+category].Exhausted
 		}
 		if len(items) == 0 && err != nil && ctx.Err() == nil && (category == "" || category == "short_play") {
+			appErr := err
 			var totalPages int
-			items, totalPages, err = d.fetchHongguoCategoryPage(ctx, "real-drama?page="+strconv.Itoa(page), "真人剧")
-			result.HasMore = page < totalPages
+			var fallbackErr error
+			for attempt := 0; attempt < 2; attempt++ {
+				if attempt > 0 {
+					select {
+					case <-time.After(time.Second):
+					case <-ctx.Done():
+						return result, ctx.Err()
+					}
+				}
+				items, totalPages, fallbackErr = d.fetchHongguoCategoryPage(ctx, "real-drama?page="+strconv.Itoa(page), "真人剧")
+				if fallbackErr == nil {
+					break
+				}
+			}
+			if fallbackErr == nil {
+				result.HasMore = page < totalPages
+				err = nil
+			} else {
+				// 网页源失败时保留 App 接口的原始错误，并给出可读提示
+				err = fmt.Errorf("红果接口暂时不可用（官方限制）：%v", appErr)
+			}
 		}
 	case sourceHuangdou:
 		client := newHuangdouAPIClient(d)

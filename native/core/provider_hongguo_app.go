@@ -55,6 +55,7 @@ type hongguoAppClient struct {
 	gate                chan struct{}
 	gateMu              sync.Mutex
 	gateLast            time.Time
+	categoryBlockedUntil time.Time
 }
 
 // hongguoAppGate 限制对红果 App 接口的并发与频率，压平突发请求。
