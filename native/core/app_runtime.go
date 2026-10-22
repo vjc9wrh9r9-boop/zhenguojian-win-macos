@@ -660,7 +660,10 @@ func (engine *nativeEngine) nativeCatalog(ctx context.Context, input nativeInput
 			items = nil
 			err = fmt.Errorf("红果 App 分类接口暂不可用")
 		} else {
-			items, err = d.fetchHongguoAppCatalogCategory(ctx, category)
+			// 分类接口被限制时，长时间重试会让首屏卡住：给 App 分类请求设短超时，失败即熔断并走网页源
+			appCtx, appCancel := context.WithTimeout(ctx, 4*time.Second)
+			items, err = d.fetchHongguoAppCatalogCategory(appCtx, category)
+			appCancel()
 			if err != nil {
 				client.mu.Lock()
 				client.categoryBlockedUntil = time.Now().Add(5 * time.Minute)
@@ -712,6 +715,14 @@ func (engine *nativeEngine) nativeCatalog(ctx context.Context, input nativeInput
 					all = append(all, part...)
 					if pages > maxPages {
 						maxPages = pages
+					}
+				}
+				if fallbackErr != nil && page > 1 && len(plan) > 0 {
+					// 可能已超出网页源分页范围（历史页码来自 App 接口）：探测总页数后按“已加载完”处理
+					if _, totalPages, probeErr := d.fetchHongguoCategoryPage(ctx, plan[0].route+"?page=1", plan[0].name); probeErr == nil && page > totalPages {
+						fallbackErr = nil
+						all = nil
+						maxPages = totalPages
 					}
 				}
 				if fallbackErr == nil {
