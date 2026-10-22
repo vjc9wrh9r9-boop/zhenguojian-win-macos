@@ -673,29 +673,55 @@ func (engine *nativeEngine) nativeCatalog(ctx context.Context, input nativeInput
 		if category != "" && state != nil {
 			result.HasMore = !state.Feeds["category:"+category].Exhausted
 		}
-		if len(items) == 0 && err != nil && ctx.Err() == nil && (category == "" || category == "short_play") {
-			appErr := err
-			var totalPages int
-			var fallbackErr error
-			for attempt := 0; attempt < 2; attempt++ {
-				if attempt > 0 {
-					select {
-					case <-time.After(time.Second):
-					case <-ctx.Done():
-						return result, ctx.Err()
+		if len(items) == 0 && err != nil && ctx.Err() == nil {
+			webRoutes := map[string]struct{ route, name string }{
+				"short_play":   {"real-drama", "真人剧"},
+				"comic_series": {"comic-drama", "漫剧"},
+				"ai_series":    {"ai-drama", "AI剧"},
+			}
+			var plan []struct{ route, name string }
+			if route, ok := webRoutes[category]; ok {
+				plan = append(plan, route)
+			} else if category == "" {
+				plan = append(plan, webRoutes["short_play"], webRoutes["comic_series"], webRoutes["ai_series"])
+			}
+			if len(plan) > 0 {
+				appErr := err
+				var all []Drama
+				maxPages := 0
+				var fallbackErr error
+				for _, entry := range plan {
+					var part []Drama
+					var pages int
+					for attempt := 0; attempt < 2; attempt++ {
+						if attempt > 0 {
+							select {
+							case <-time.After(time.Second):
+							case <-ctx.Done():
+								return result, ctx.Err()
+							}
+						}
+						part, pages, fallbackErr = d.fetchHongguoCategoryPage(ctx, entry.route+"?page="+strconv.Itoa(page), entry.name)
+						if fallbackErr == nil {
+							break
+						}
+					}
+					if fallbackErr != nil {
+						break
+					}
+					all = append(all, part...)
+					if pages > maxPages {
+						maxPages = pages
 					}
 				}
-				items, totalPages, fallbackErr = d.fetchHongguoCategoryPage(ctx, "real-drama?page="+strconv.Itoa(page), "真人剧")
 				if fallbackErr == nil {
-					break
+					items = all
+					result.HasMore = page < maxPages
+					err = nil
+				} else {
+					// 网页源失败时保留 App 接口的原始错误，并给出可读提示
+					err = fmt.Errorf("红果接口暂时不可用（官方限制）：%v", appErr)
 				}
-			}
-			if fallbackErr == nil {
-				result.HasMore = page < totalPages
-				err = nil
-			} else {
-				// 网页源失败时保留 App 接口的原始错误，并给出可读提示
-				err = fmt.Errorf("红果接口暂时不可用（官方限制）：%v", appErr)
 			}
 		}
 	case sourceHuangdou:
