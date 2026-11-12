@@ -187,6 +187,16 @@ func (d *Downloader) resolveProviderMedia(ctx context.Context, task Task) (provi
 			media.Referer = client.host + "/home"
 		}
 	}
+	if chapter.Source == sourceHuangguoAI {
+		// 优先走站点播放接口（返回直连地址），失败再回退网页解析
+		if _, sourceID, valid := splitProviderDramaID(task.DramaID); valid {
+			if episode, parseErr := strconv.Atoi(chapter.EpisodeString(task.Index)); parseErr == nil && episode > 0 {
+				if restMedia, restErr := d.huangguoRESTPlayback(ctx, sourceID, episode); restErr == nil {
+					return restMedia, nil
+				}
+			}
+		}
+	}
 	if chapter.PageURL != "" && (chapter.Source == sourceHuangguoAI || chapter.Source == sourceHuangguoVideo) {
 		responses := &playbackResponseURLs{}
 		pageContext := context.WithValue(ctx, playbackResponseURLsKey{}, responses)

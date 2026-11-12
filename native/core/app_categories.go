@@ -189,6 +189,10 @@ func parseHuangguoVideoCategories(body string) []nativeCategory {
 }
 
 func (d *Downloader) fetchHuangguoAICatalogPage(ctx context.Context, page int, category string) ([]Drama, bool, error) {
+	// 优先走站点 REST 接口（分页/封面更稳），失败再回退网页抓取
+	if items, hasMore, err := d.huangguoRESTCatalog(ctx, page, category); err == nil && len(items) > 0 {
+		return items, hasMore, nil
+	}
 	categories := nativeAICategories
 	if category != "" {
 		for _, entry := range categories {
