@@ -140,7 +140,18 @@ jobs:
             export PATH="/c/ProgramData/chocolatey/bin:$PATH"
           fi
           x86_64-w64-mingw32-gcc --version | head -1
-          python scripts/build_windows.py ${{ matrix.arguments }} 2>&1 | tee build.log
+          set +e
+          ok=0
+          for attempt in 1 2 3; do
+            echo "== 构建尝试 $attempt =="
+            python scripts/build_windows.py ${{ matrix.arguments }} 2>&1 | tee build.log
+            code=${PIPESTATUS[0]}
+            if [ "$code" -eq 0 ]; then ok=1; break; fi
+            echo "第 $attempt 次失败（exit $code），清理缓存后重试"
+            rm -rf build/windows flutter/ephemeral/.plugin_symlinks 2>/dev/null || true
+            sleep 15
+          done
+          if [ "$ok" -ne 1 ]; then echo "三次构建均失败" >&2; exit 1; fi
 
       - name: Save build log (failure)
         if: always() && steps.build.outcome != 'success'
