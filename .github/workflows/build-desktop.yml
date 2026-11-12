@@ -120,6 +120,28 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Prefetch Windows media dependencies
+        shell: bash
+        run: |
+          mkdir -p build/windows/x64
+          MPV="mpv-dev-x86_64-20260921-git-e76a35ec95.7z"
+          ANGLE="ANGLE-v1.0.1.7z"
+          MPV_URL="https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260921/${MPV}"
+          ANGLE_URL="https://github.com/alexmercerind/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/ANGLE.7z"
+          fetch() {
+            local out="$1" url="$2"
+            [ -s "build/windows/x64/$out" ] && return 0
+            for prefix in "" "https://ghfast.top/" "https://gh-proxy.com/"; do
+              if curl -fL --max-time 300 -o "build/windows/x64/$out" "${prefix}${url}"; then
+                echo "下载成功: ${prefix}${url}"; return 0
+              fi
+            done
+            echo "依赖下载失败: $out" >&2; return 1
+          }
+          fetch "$MPV" "$MPV_URL" || true
+          fetch "$ANGLE" "$ANGLE_URL" || true
+          ls -la build/windows/x64/*.7z || true
+
       - name: Build Windows package (${{ matrix.edition }})
         id: build
         continue-on-error: true
