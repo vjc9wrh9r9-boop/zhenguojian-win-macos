@@ -219,11 +219,7 @@ func (d *Downloader) resolveHongguoMedia(ctx context.Context, task Task) (provid
 	if err := ctx.Err(); err != nil {
 		return providerMedia{}, err
 	}
-	media, apiErr := d.resolveHongguoPlaybackAPI(ctx, seriesID, videoID)
-	if apiErr == nil {
-		return media, nil
-	}
-	return providerMedia{}, fmt.Errorf("红果新版取流失败：%v；App 取流失败：%v；网页取流失败：%v；备用取流失败：%w", publicError(multiErr), publicError(nativeErr), publicError(pageErr), apiErr)
+	return providerMedia{}, fmt.Errorf("红果取流失败：%v；%v；%v", publicError(multiErr), publicError(nativeErr), publicError(pageErr))
 }
 
 func (d *Downloader) resolveHongguoWebMedia(ctx context.Context, seriesID, videoID string) (providerMedia, error) {
@@ -239,6 +235,10 @@ func (d *Downloader) resolveHongguoWebMedia(ctx context.Context, seriesID, video
 	info, _ := page["video_player_info"].(map[string]any)
 	addresses := hongguoMediaAddresses(info)
 	if len(addresses) == 0 {
+		// 新版网页播放页改为直接内嵌公开 mp4 地址：/video/public/<vid>/<quality>.mp4
+		if public := hongguoPublicVideoAddress(body, videoID); public != "" {
+			return providerMedia{URL: public, Referer: d.providerBaseURL(sourceHongguo) + "/"}, nil
+		}
 		return providerMedia{}, fmt.Errorf("红果该集未提供公开播放地址，可能需要登录或 App 授权；不会将试看集冒充该集下载")
 	}
 	duration, _ := strconv.ParseFloat(mapString(info, "duration"), 64)
@@ -344,4 +344,17 @@ func anyList(v any) []any {
 		}
 	}
 	return nil
+}
+
+// hongguoPublicVideoAddress 从新版网页播放页提取公开 mp4 地址（通常只有最低清晰度）。
+func hongguoPublicVideoAddress(body, videoID string) string {
+	if body == "" || videoID == "" {
+		return ""
+	}
+	pattern := regexp.MustCompile(`/video/public/` + regexp.QuoteMeta(videoID) + `/[a-z0-9]+\.mp4`)
+	match := pattern.FindString(body)
+	if match == "" {
+		return ""
+	}
+	return hongguoBaseURL + match
 }
