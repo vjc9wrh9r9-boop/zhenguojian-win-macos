@@ -1,0 +1,64 @@
+Building windows\runner\duanju_core.dll
+Resolving dependencies...
+Downloading packages...
+  android_file_picker 2.1.0 (2.1.6 available)
+  archive 4.5.2 (4.6.0 available)
+  code_assets 1.2.1 (2.2.0 available)
+  cross_file 0.3.5+5 (0.4.0 available)
+  crypto 3.0.7 (3.0.8 available)
+  ffmpeg_kit_flutter_new_min_gpl 2.6.2 (2.6.8 available)
+  file_picker 13.1.0 (13.3.3 available)
+  file_picker_darwin 2.3.0 (2.5.1 available)
+  file_picker_linux 2.0.2 (2.0.4 available)
+  file_picker_web 4.1.0 (4.2.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  jni 1.1.0 (1.1.2 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+! media_kit_libs_windows_video 1.0.11+duanju.1 from path packages\media_kit_libs_windows_video (overridden)
+  meta 1.18.3 (1.19.0 available)
+  objective_c 9.5.0 (9.6.4 available)
+  petitparser 7.0.2 (7.1.0 available)
+  posix 6.5.2 (6.5.4 available)
+  record_use 0.6.0 (1.1.1 available)
+  safe_local_storage 2.0.6 (2.0.7 available)
+  screen_retriever 0.2.2 (0.4.0 available)
+  shared_preferences_android 2.4.28 (2.5.5 available)
+  shared_preferences_foundation 2.5.7 (2.6.2 available)
+  synchronized 3.5.0 (3.6.1+1 available)
+  test_api 0.7.12 (0.7.15 available)
+  vector_math 2.4.0 (2.4.4 available)
+  video_player_avfoundation 2.12.1 (2.12.3 available)
+  vm_service 15.3.0 (15.4.0 available)
+  wakelock_plus 1.8.1 (1.8.2 available)
+  web 1.1.1 (1.1.2 available)
+  window_manager 0.5.2 (0.7.0 available)
+  windows_file_picker 2.0.1 (2.0.2 available)
+  xml 7.0.1 (7.1.0 available)
+Got dependencies!
+32 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Building Windows application...                                 
+CMake Error at flutter/ephemeral/.plugin_symlinks/media_kit_libs_windows_video/windows/CMakeLists.txt:21 (file):
+  file DOWNLOAD cannot compute hash on failed download
+
+    from url: "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260921/mpv-dev-x86_64-20260921-git-e76a35ec95.7z"
+    status: [22;"HTTP response code said error"]
+Call Stack (most recent call first):
+  flutter/ephemeral/.plugin_symlinks/media_kit_libs_windows_video/windows/CMakeLists.txt:68 (duanju_native_archive)
+
+
+CMake Error at flutter/ephemeral/.plugin_symlinks/media_kit_libs_windows_video/windows/CMakeLists.txt:31 (message):
+  Failed to download mpv-dev-x86_64-20260921-git-e76a35ec95.7z: 22;"HTTP
+  response code said error"
+Call Stack (most recent call first):
+  flutter/ephemeral/.plugin_symlinks/media_kit_libs_windows_video/windows/CMakeLists.txt:68 (duanju_native_archive)
+
+
+Building Windows application...                                  2,827ms
+Unable to generate build files
+Traceback (most recent call last):
+  File "D:\a\zhenguojian-win-macos\zhenguojian-win-macos\scripts\build_windows.py", line 28, in <module>
+    subprocess.run([flutter, 'build', 'windows', '--release', '--no-pub', *variant.flutter_arguments], cwd=root, env=env, check=True)
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['C:\\hostedtoolcache\\windows\\flutter\\stable-3.47.4-x64/flutter/bin\\flutter.BAT', 'build', 'windows', '--release', '--no-pub', '--dart-define=ALL_SOURCES=false']' returned non-zero exit status 1.
