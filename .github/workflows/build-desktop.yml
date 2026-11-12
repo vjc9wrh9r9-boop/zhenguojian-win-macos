@@ -170,7 +170,11 @@ jobs:
             code=${PIPESTATUS[0]}
             if [ "$code" -eq 0 ]; then ok=1; break; fi
             echo "第 $attempt 次失败（exit $code），清理缓存后重试"
+            mkdir -p "$RUNNER_TEMP/archives"
+            cp build/windows/x64/*.7z "$RUNNER_TEMP/archives/" 2>/dev/null || true
             rm -rf build/windows flutter/ephemeral/.plugin_symlinks 2>/dev/null || true
+            mkdir -p build/windows/x64
+            cp "$RUNNER_TEMP/archives/"*.7z build/windows/x64/ 2>/dev/null || true
             sleep 15
           done
           if [ "$ok" -ne 1 ]; then echo "三次构建均失败" >&2; exit 1; fi
