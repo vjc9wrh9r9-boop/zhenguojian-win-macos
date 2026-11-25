@@ -49,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _search = TextEditingController();
   final _scroll = ScrollController();
   Timer? _debounce;
+  String _filterQuery = '';
   late SourceSite _source;
   bool _allSources = false;
   List<Drama> _items = [];
@@ -608,9 +609,19 @@ class _HomeScreenState extends State<HomeScreen> {
       _loading = _loadingMore = false;
     }
     setState(() {});
-    if (_onlineSearch && query.trim().isEmpty) {
-      _debounce = Timer(const Duration(milliseconds: 300), () => _load());
+    final normalized = query.trim().toLowerCase();
+    if (normalized == _filterQuery) {
+      if (_onlineSearch && normalized.isEmpty) {
+        _debounce = Timer(const Duration(milliseconds: 300), () => _load());
+      }
+      return;
     }
+    // 本地过滤要在上万条剧库里跑，输入每敲一个字就全量过滤会明显卡
+    _debounce = Timer(const Duration(milliseconds: 180), () {
+      if (!mounted) return;
+      setState(() => _filterQuery = normalized);
+      if (_onlineSearch && normalized.isEmpty) _load();
+    });
   }
 
   void _submitSearch(String query) {
@@ -621,6 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectionMode = false;
     _selectedDramas.clear();
     _search.text = query.trim();
+    _filterQuery = query.trim().toLowerCase();
     _debounce?.cancel();
     if (_search.text.isNotEmpty) {
       unawaited(
@@ -812,24 +824,42 @@ class _HomeScreenState extends State<HomeScreen> {
       _group.sources.any((source) => source.id == 'huangdou');
   bool get _hideVip => _supportsVipFilter && widget.store.hideVip;
 
+  List<Drama>? _visibleCache;
+  String _visibleKey = '';
+
+  /// 剧库上万条时，过滤 + 排序一次要几十毫秒；store 每发一次通知都会重建，
+  /// 必须按输入做缓存，否则滚动、下载进度刷新都会卡。
   List<Drama> get _visible {
-    final query = _search.text.trim().toLowerCase();
-    return sortCatalog(
-      _items.where((drama) {
-        if (!widget.store.allowsSource(drama.source)) return false;
-        if (_category.startsWith('local:') &&
-            categoryName(drama.category) != _category.substring(6)) {
-          return false;
-        }
-        if (_hideVip && drama.source == 'huangdou' && drama.vip) {
-          return false;
-        }
-        return _onlineSearch ||
-            query.isEmpty ||
-            matchesDramaQuery(drama, query);
-      }),
-      widget.store.catalogView,
-    );
+    final query = _filterQuery;
+    final view = widget.store.catalogView;
+    final key = [
+      identityHashCode(_items),
+      _items.length,
+      query,
+      _category,
+      _hideVip,
+      _onlineSearch,
+      view.sort.index,
+      view.release,
+      view.allSources,
+      widget.store.sources.map((site) => site.id).join(','),
+    ].join('|');
+    if (_visibleCache != null && key == _visibleKey) return _visibleCache!;
+    final matched = _items.where((drama) {
+      if (!widget.store.allowsSource(drama.source)) return false;
+      if (_category.startsWith('local:') &&
+          categoryName(drama.category) != _category.substring(6)) {
+        return false;
+      }
+      if (_hideVip && drama.source == 'huangdou' && drama.vip) {
+        return false;
+      }
+      return _onlineSearch || query.isEmpty || matchesDramaQuery(drama, query);
+    }).toList(growable: false);
+    final sorted = sortCatalog(matched, view);
+    _visibleKey = key;
+    _visibleCache = sorted;
+    return sorted;
   }
 
   @override

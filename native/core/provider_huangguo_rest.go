@@ -56,7 +56,11 @@ func (d *Downloader) huangguoRESTDo(ctx context.Context, method, path string, pa
 		body = encoded
 	}
 	var lastErr error
-	for _, base := range d.huangguoRESTBases() {
+	bases := d.huangguoRESTBases()
+	if len(bases) > 3 {
+		bases = bases[:3]
+	}
+	for _, base := range bases {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
@@ -77,7 +81,7 @@ func (d *Downloader) huangguoRESTDo(ctx context.Context, method, path string, pa
 		request.Header.Set("Accept", "application/json")
 		request.Header.Set("Referer", base+"/")
 		request.Header.Set("User-Agent", huangguoRESTUserAgent)
-		client := &http.Client{Timeout: 15 * time.Second}
+		client := &http.Client{Timeout: 6 * time.Second}
 		response, err := client.Do(request)
 		if err != nil {
 			lastErr = fmt.Errorf("%s 请求失败: %w", hostOf(base), err)

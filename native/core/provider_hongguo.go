@@ -198,28 +198,49 @@ func (d *Downloader) resolveHongguoMedia(ctx context.Context, task Task) (provid
 	if !hongguoNumericID.MatchString(videoID) || !hongguoNumericID.MatchString(seriesID) {
 		return providerMedia{}, fmt.Errorf("红果章节 ID 无效，请重新获取章节")
 	}
-	media, multiErr := d.resolveHongguoMultiMedia(ctx, videoID)
-	if multiErr == nil {
-		return media, nil
+	// 三个取流来源并发跑：任一成功立刻返回，避免串行等超时导致点播放后长时间转圈。
+	type mediaResult struct {
+		media providerMedia
+		err   error
 	}
-	if err := ctx.Err(); err != nil {
-		return providerMedia{}, err
+	done := make(chan mediaResult, 3)
+	attempts := []func(context.Context) (providerMedia, error){
+		func(attemptCtx context.Context) (providerMedia, error) {
+			return d.resolveHongguoMultiMedia(attemptCtx, videoID)
+		},
+		func(attemptCtx context.Context) (providerMedia, error) {
+			return d.resolveHongguoAppMedia(attemptCtx, videoID)
+		},
+		func(attemptCtx context.Context) (providerMedia, error) {
+			return d.resolveHongguoWebMedia(attemptCtx, seriesID, videoID)
+		},
 	}
-	media, nativeErr := d.resolveHongguoAppMedia(ctx, videoID)
-	if nativeErr == nil {
-		return media, nil
+	attemptCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	for _, attempt := range attempts {
+		go func(attempt func(context.Context) (providerMedia, error)) {
+			media, err := attempt(attemptCtx)
+			done <- mediaResult{media: media, err: err}
+		}(attempt)
 	}
-	if err := ctx.Err(); err != nil {
-		return providerMedia{}, err
+	var failures []string
+	for range attempts {
+		select {
+		case <-ctx.Done():
+			return providerMedia{}, ctx.Err()
+		case result := <-done:
+			if result.err == nil && result.media.URL != "" {
+				cancel()
+				return result.media, nil
+			}
+			if result.err != nil {
+				failures = append(failures, publicError(result.err).Error())
+				continue
+			}
+			failures = append(failures, "未返回播放地址")
+		}
 	}
-	media, pageErr := d.resolveHongguoWebMedia(ctx, seriesID, videoID)
-	if pageErr == nil {
-		return media, nil
-	}
-	if err := ctx.Err(); err != nil {
-		return providerMedia{}, err
-	}
-	return providerMedia{}, fmt.Errorf("红果取流失败：%v；%v；%v", publicError(multiErr), publicError(nativeErr), publicError(pageErr))
+	return providerMedia{}, fmt.Errorf("红果取流失败：%s", strings.Join(failures, "；"))
 }
 
 func (d *Downloader) resolveHongguoWebMedia(ctx context.Context, seriesID, videoID string) (providerMedia, error) {

@@ -401,17 +401,24 @@ class LocalStore extends ChangeNotifier {
     }
   }
 
+  CatalogView? _catalogViewCache;
+
   CatalogView get catalogView {
     if (locked) return const CatalogView();
+    final cached = _catalogViewCache;
+    if (cached != null) return cached;
+    CatalogView view;
     try {
-      return CatalogView.fromJson(
+      view = CatalogView.fromJson(
         Map<String, dynamic>.from(
           jsonDecode(_string(_key('catalogView')) ?? '{}') as Map,
         ),
       );
     } catch (_) {
-      return const CatalogView();
+      view = const CatalogView();
     }
+    _catalogViewCache = view;
+    return view;
   }
 
   List<String> get recentSearches {
@@ -426,8 +433,10 @@ class LocalStore extends ChangeNotifier {
     }
   }
 
-  Future<void> setCatalogView(CatalogView value) =>
-      _setting(_key('catalogView'), jsonEncode(value.toJson()));
+  Future<void> setCatalogView(CatalogView value) {
+    _catalogViewCache = value;
+    return _setting(_key('catalogView'), jsonEncode(value.toJson()));
+  }
 
   Future<void> setCatalogSource(String source, {required bool allSources}) {
     final epoch = _epoch;
