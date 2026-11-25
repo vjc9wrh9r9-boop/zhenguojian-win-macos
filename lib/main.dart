@@ -32,6 +32,10 @@ Future<void> main(List<String> arguments) async {
   if (Platform.isWindows || Platform.isMacOS) {
     await windowManager.ensureInitialized();
   }
+  // 限制图片缓存：剧库上万条时，默认缓存会把内存顶到 800MB+，导致界面发卡
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSize = 240;
+  imageCache.maximumSizeBytes = 160 << 20;
   MediaKit.ensureInitialized();
   VideoEnhancementAssets.registerLicenses();
   if (Platform.isWindows && arguments.firstOrNull == '--package-smoke') {
